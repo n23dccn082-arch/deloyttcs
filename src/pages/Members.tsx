@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { UserPlus, Trash2, X, Search } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import Avatar from '../components/Avatar'
@@ -86,6 +87,7 @@ function AddMemberModal({ existingEmails, onClose, onAdd }: {
 export default function Members() {
   const { activeProject } = useProject()
   const { user: currentUser } = useAuth()
+  const navigate = useNavigate()
   const [members, setMembers] = useState<MemberResponse[]>([])
   const [showAddModal, setShowAddModal] = useState(false)
   const [toast, setToast] = useState('')
@@ -143,8 +145,18 @@ export default function Members() {
   if (!activeProject) return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f4f5f8' }}>
       <Sidebar />
-      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8a8fa3', fontSize: 15, fontWeight: 600 }}>
-        Chọn một dự án để xem thành viên
+      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: 380 }}>
+          <div style={{ fontSize: 52, marginBottom: 16 }}>👥</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#1a1d29', marginBottom: 8 }}>Chưa chọn dự án</div>
+          <div style={{ fontSize: 14, color: '#8a8fa3', fontWeight: 500, lineHeight: 1.6, marginBottom: 24 }}>
+            Chọn một dự án từ danh sách để xem thành viên dự án.
+          </div>
+          <button onClick={() => navigate('/projects')}
+            style={{ padding: '12px 28px', borderRadius: 12, background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(37,99,235,.35)' }}>
+            Đi đến danh sách dự án
+          </button>
+        </div>
       </main>
     </div>
   )

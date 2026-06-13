@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { Plus, Play, CheckCircle, X, Calendar } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { useProject } from '../context/ProjectContext'
@@ -69,6 +70,7 @@ const statusConfig: Record<string, { label: string; color: string; bg: string }>
 export default function Sprints() {
   const { activeProject } = useProject()
   const { user: currentUser } = useAuth()
+  const navigate = useNavigate()
   const [sprints, setSprints] = useState<SprintResponse[]>([])
   const [showModal, setShowModal] = useState(false)
   const [toast, setToast] = useState('')
@@ -128,8 +130,18 @@ export default function Sprints() {
   if (!activeProject) return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f4f5f8' }}>
       <Sidebar />
-      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8a8fa3', fontSize: 15, fontWeight: 600 }}>
-        Chọn một dự án để xem Sprints
+      <main style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center', maxWidth: 380 }}>
+          <div style={{ fontSize: 52, marginBottom: 16 }}>🏃</div>
+          <div style={{ fontSize: 20, fontWeight: 800, color: '#1a1d29', marginBottom: 8 }}>Chưa chọn dự án</div>
+          <div style={{ fontSize: 14, color: '#8a8fa3', fontWeight: 500, lineHeight: 1.6, marginBottom: 24 }}>
+            Chọn một dự án từ danh sách để xem danh sách Sprint.
+          </div>
+          <button onClick={() => navigate('/projects')}
+            style={{ padding: '12px 28px', borderRadius: 12, background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', fontSize: 14, fontWeight: 700, border: 'none', cursor: 'pointer', boxShadow: '0 4px 14px rgba(37,99,235,.35)' }}>
+            Đi đến danh sách dự án
+          </button>
+        </div>
       </main>
     </div>
   )

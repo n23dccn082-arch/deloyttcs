@@ -112,7 +112,6 @@ export default function Sidebar() {
 
       {/* Logout */}
       <div style={{ marginTop: 12, padding: '12px 0 0', borderTop: '1px solid #1c1f3a' }}>
-        {user && <div style={{ fontSize: 12, color: '#5a5f7d', fontWeight: 600, marginBottom: 8, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', padding: '0 4px' }}>{user.email}</div>}
         <button onClick={handleLogout}
           style={{ width: '100%', padding: '9px 12px', borderRadius: 9, background: 'rgba(220,38,38,.12)', border: '1px solid rgba(220,38,38,.25)', color: '#f87171', fontSize: 13, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 7 }}>
           <LogOut size={14} /> Đăng xuất
