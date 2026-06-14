@@ -203,7 +203,8 @@ export default function Board() {
     { id: 'IN_PROGRESS', label: 'IN PROGRESS', dotColor: colDotColors.IN_PROGRESS, tasks: [] },
     { id: 'DONE',        label: 'DONE',        dotColor: colDotColors.DONE,        tasks: [] },
   ])
-  const [, setSprints] = useState<SprintResponse[]>([])
+  const [sprints, setSprints] = useState<SprintResponse[]>([])
+  const [showSprintDropdown, setShowSprintDropdown] = useState(false)
   const [members, setMembers] = useState<MemberResponse[]>([])
   const [activeSprint, setActiveSprint] = useState<SprintResponse | null>(null)
   const [activeTask, setActiveTask] = useState<TaskResponse | null>(null)
@@ -288,6 +289,25 @@ export default function Board() {
     } catch (err: any) { alert(err.response?.data?.message ?? 'Xóa task thất bại') }
   }
 
+  async function handleSprintSelect(sprint: SprintResponse) {
+    if (!projectId) return
+    setActiveSprint(sprint)
+    setShowSprintDropdown(false)
+    setLoading(true)
+    try {
+      const tasks = await taskService.getTasks(projectId, sprint.id)
+      setColumns(prev => prev.map(col => ({ ...col, tasks: tasks.filter(t => t.status === col.id) })))
+    } catch (e) { console.error(e) }
+    finally { setLoading(false) }
+  }
+
+  useEffect(() => {
+    if (!showSprintDropdown) return
+    function handleClickOutside() { setShowSprintDropdown(false) }
+    document.addEventListener('click', handleClickOutside)
+    return () => document.removeEventListener('click', handleClickOutside)
+  }, [showSprintDropdown])
+
   if (!activeProject) return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f4f5f8' }}>
       <Sidebar />
@@ -320,8 +340,24 @@ export default function Board() {
             <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#6366f1', display: 'block' }} />
             {activeProject.name}
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 14px', background: '#f4f5f8', border: '1px solid #e8eaf0', borderRadius: 10, fontSize: 13.5, fontWeight: 700 }}>
-            {activeSprint?.name ?? 'Backlog'} <ChevronDown size={14} color="#8a8fa3" />
+          <div style={{ position: 'relative' }}>
+            <div
+              onClick={e => { e.stopPropagation(); setShowSprintDropdown(v => !v) }}
+              style={{ display: 'flex', alignItems: 'center', gap: 9, padding: '9px 14px', background: '#f4f5f8', border: '1px solid #e8eaf0', borderRadius: 10, fontSize: 13.5, fontWeight: 700, cursor: 'pointer', userSelect: 'none' }}>
+              {activeSprint?.name ?? 'Backlog'} <ChevronDown size={14} color="#8a8fa3" />
+            </div>
+            {showSprintDropdown && sprints.length > 0 && (
+              <div style={{ position: 'absolute', top: '110%', left: 0, background: '#fff', border: '1px solid #e8eaf0', borderRadius: 12, boxShadow: '0 8px 24px rgba(20,23,40,.12)', minWidth: 200, zIndex: 50, overflow: 'hidden' }}>
+                {sprints.map((s, i) => (
+                  <div key={s.id}
+                    onClick={() => handleSprintSelect(s)}
+                    style={{ padding: '11px 16px', cursor: 'pointer', background: activeSprint?.id === s.id ? '#f0f4ff' : '#fff', fontWeight: 700, fontSize: 13.5, borderBottom: i < sprints.length - 1 ? '1px solid #f3f4f8' : 'none' }}>
+                    {s.name}
+                    <span style={{ fontSize: 11.5, fontWeight: 600, color: '#8a8fa3', marginLeft: 8 }}>{s.status}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
           <div style={{ flex: 1 }} />
           <div style={{ display: 'flex' }}>
