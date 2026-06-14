@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Play, CheckCircle, X, Calendar } from 'lucide-react'
+import { Plus, Play, CheckCircle, X, Calendar, Edit2 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { useProject } from '../context/ProjectContext'
 import { useAuth } from '../context/AuthContext'
@@ -61,6 +61,81 @@ function CreateSprintModal({ onClose, onCreate }: {
   )
 }
 
+function EditSprintModal({ sprint, onClose, onSave }: {
+  sprint: SprintResponse
+  onClose: () => void
+  onSave: (updated: SprintResponse) => void
+}) {
+  const [name, setName] = useState(sprint.name)
+  const [goal, setGoal] = useState(sprint.goal ?? '')
+  const [startDate, setStartDate] = useState(sprint.startDate ?? '')
+  const [endDate, setEndDate] = useState(sprint.endDate ?? '')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+
+  async function handleSave() {
+    if (!name.trim()) { setError('Tên sprint không được trống'); return }
+    setLoading(true)
+    try {
+      const updated = await sprintService.updateSprint(sprint.id, {
+        name: name.trim(),
+        goal: goal || undefined,
+        startDate: startDate || undefined,
+        endDate: endDate || undefined,
+      })
+      onSave(updated)
+      onClose()
+    } catch (err: any) {
+      setError(err.response?.data?.message ?? 'Cập nhật thất bại')
+    } finally { setLoading(false) }
+  }
+
+  return (
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(19,21,43,.55)', backdropFilter: 'blur(4px)', zIndex: 100, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div style={{ background: '#fff', borderRadius: 20, padding: 28, width: '100%', maxWidth: 440, boxShadow: '0 24px 60px rgba(20,23,40,.18)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', marginBottom: 22 }}>
+          <h2 style={{ margin: 0, fontSize: 18, fontWeight: 800, flex: 1 }}>Sửa Sprint</h2>
+          <button onClick={onClose} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 4 }}><X size={20} color="#8a8fa3" /></button>
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#13152b', marginBottom: 6 }}>Tên Sprint *</label>
+          <input value={name} onChange={e => { setName(e.target.value); setError('') }}
+            style={{ width: '100%', padding: '11px 14px', borderRadius: 10, border: `1.5px solid ${error ? '#dc2626' : '#e8eaf0'}`, fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+          {error && <div style={{ fontSize: 12, color: '#dc2626', marginTop: 4, fontWeight: 600 }}>{error}</div>}
+        </div>
+
+        <div style={{ marginBottom: 14 }}>
+          <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#13152b', marginBottom: 6 }}>Mục tiêu Sprint</label>
+          <textarea value={goal} onChange={e => setGoal(e.target.value)} rows={2}
+            style={{ width: '100%', padding: '11px 14px', borderRadius: 10, border: '1.5px solid #e8eaf0', fontSize: 14, fontFamily: 'inherit', outline: 'none', resize: 'vertical', boxSizing: 'border-box' }} />
+        </div>
+
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 24 }}>
+          {[
+            { label: 'Ngày bắt đầu', value: startDate, onChange: setStartDate },
+            { label: 'Ngày kết thúc', value: endDate, onChange: setEndDate },
+          ].map(({ label, value, onChange }) => (
+            <div key={label}>
+              <label style={{ display: 'block', fontSize: 13, fontWeight: 700, color: '#13152b', marginBottom: 6 }}>{label}</label>
+              <input type="date" value={value} onChange={e => onChange(e.target.value)}
+                style={{ width: '100%', padding: '11px 14px', borderRadius: 10, border: '1.5px solid #e8eaf0', fontSize: 14, fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
+            </div>
+          ))}
+        </div>
+
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button onClick={onClose} style={{ flex: 1, padding: 12, borderRadius: 10, background: '#f4f5f8', border: '1px solid #e8eaf0', fontSize: 14, fontWeight: 700, color: '#5b5f78', cursor: 'pointer' }}>Huỷ</button>
+          <button onClick={handleSave} disabled={loading}
+            style={{ flex: 2, padding: 12, borderRadius: 10, background: 'linear-gradient(135deg,#3b82f6,#2563eb)', color: '#fff', fontSize: 14, fontWeight: 700, border: 'none', cursor: loading ? 'not-allowed' : 'pointer', opacity: loading ? 0.7 : 1, boxShadow: '0 4px 14px rgba(37,99,235,.35)' }}>
+            {loading ? 'Đang lưu...' : 'Lưu thay đổi'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
   PLANNING:  { label: 'Lên kế hoạch', color: '#8a8fa3', bg: '#f1f2f7' },
   ACTIVE:    { label: 'Đang chạy',    color: '#16a34a', bg: '#e7f6ec' },
@@ -76,6 +151,7 @@ export default function Sprints() {
   const [toast, setToast] = useState('')
   const [loading, setLoading] = useState(true)
   const [myRole, setMyRole] = useState<string | null>(null)
+  const [editingSprint, setEditingSprint] = useState<SprintResponse | null>(null)
 
   const projectId = activeProject?.id
   const canManage = myRole === 'ADMIN' || myRole === 'MANAGER'
@@ -125,6 +201,11 @@ export default function Sprints() {
       showToast(`Đã tạo ${created.name}`)
       setShowModal(false)
     } catch (err: any) { showToast(err.response?.data?.message ?? 'Tạo sprint thất bại') }
+  }
+
+  function handleUpdate(updated: SprintResponse) {
+    setSprints(prev => prev.map(s => s.id === updated.id ? updated : s))
+    showToast(`Đã cập nhật ${updated.name}`)
   }
 
   if (!activeProject) return (
@@ -215,6 +296,12 @@ export default function Sprints() {
                   </div>
                   {canManage && (
                     <div style={{ display: 'flex', gap: 8, flexShrink: 0 }}>
+                      {sprint.status !== 'COMPLETED' && (
+                        <button onClick={() => setEditingSprint(sprint)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 9, background: '#f4f5f8', border: '1.5px solid #e8eaf0', color: '#5b5f78', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                          <Edit2 size={14} /> Sửa
+                        </button>
+                      )}
                       {sprint.status === 'PLANNING' && (
                         <button onClick={() => handleStart(sprint.id)}
                           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 9, background: '#e7f6ec', border: '1.5px solid #22c55e44', color: '#16a34a', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
@@ -237,6 +324,13 @@ export default function Sprints() {
       </main>
 
       {showModal && <CreateSprintModal onClose={() => setShowModal(false)} onCreate={handleCreate} />}
+      {editingSprint && (
+        <EditSprintModal
+          sprint={editingSprint}
+          onClose={() => setEditingSprint(null)}
+          onSave={handleUpdate}
+        />
+      )}
 
       {toast && (
         <div style={{ position: 'fixed', bottom: 24, right: 24, background: '#13152b', color: '#fff', padding: '12px 20px', borderRadius: 12, fontSize: 13.5, fontWeight: 700, boxShadow: '0 8px 24px rgba(20,23,40,.2)', zIndex: 300 }}>

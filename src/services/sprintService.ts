@@ -14,6 +14,13 @@ export interface SprintResponse {
   donePoints: number
 }
 
+export interface UpdateSprintPayload {
+  name?: string
+  goal?: string
+  startDate?: string
+  endDate?: string
+}
+
 export interface BurndownPoint {
   date: string
   ideal: number
@@ -52,6 +59,11 @@ export const sprintService = {
 
   async getBurndown(sprintId: number): Promise<BurndownDataResponse> {
     const { data } = await api.get<BurndownDataResponse>(`/sprints/${sprintId}/burndown`)
+    return data
+  },
+
+  async updateSprint(sprintId: number, payload: UpdateSprintPayload): Promise<SprintResponse> {
+    const { data } = await api.put<SprintResponse>(`/sprints/${sprintId}`, payload)
     return data
   },
 }
