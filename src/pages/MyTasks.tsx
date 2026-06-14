@@ -5,6 +5,7 @@ import Avatar from '../components/Avatar'
 import TaskDetailModal from '../components/TaskDetailModal'
 import { taskService, type TaskResponse } from '../services/taskService'
 import { projectService, type ProjectResponse } from '../services/projectService'
+import { useAuth } from '../context/AuthContext'
 import type { Priority } from '../types'
 
 type FilterStatus = 'ALL' | 'TODO' | 'IN_PROGRESS' | 'DONE'
@@ -24,13 +25,38 @@ export default function MyTasks() {
   const [filterProjectId, setFilterProjectId] = useState<number | 'ALL'>('ALL')
   const [detailTask, setDetailTask] = useState<TaskResponse | null>(null)
   const [loading, setLoading] = useState(true)
+  const { user: currentUser } = useAuth()
+  const [memberRoles, setMemberRoles] = useState<Record<number, string>>({})
 
   useEffect(() => {
-    Promise.all([taskService.getMyTasks(), projectService.getProjects()])
-      .then(([taskData, projectData]) => { setTasks(taskData); setProjects(projectData) })
-      .catch(console.error)
-      .finally(() => setLoading(false))
-  }, [])
+    async function load() {
+      try {
+        const [taskData, projectData] = await Promise.all([
+          taskService.getMyTasks(),
+          projectService.getProjects(),
+        ])
+        setTasks(taskData)
+        setProjects(projectData)
+
+        const memberResults = await Promise.all(
+          projectData.map(p =>
+            projectService.getMembers(p.id).then(members => ({ projectId: p.id, members }))
+          )
+        )
+        const roles: Record<number, string> = {}
+        memberResults.forEach(({ projectId, members }) => {
+          const me = members.find(m => m.userId === currentUser?.id)
+          if (me) roles[projectId] = me.role
+        })
+        setMemberRoles(roles)
+      } catch (e) {
+        console.error(e)
+      } finally {
+        setLoading(false)
+      }
+    }
+    load()
+  }, [currentUser?.id])
 
   const filtered = tasks.filter(t =>
     (filterStatus === 'ALL' || t.status === filterStatus) &&
@@ -39,14 +65,31 @@ export default function MyTasks() {
   )
 
   async function handleUpdate(updated: TaskResponse) {
+    const myRole = memberRoles[updated.projectId]
+    const canEdit = myRole === 'ADMIN' || myRole === 'MANAGER'
     try {
-      // Only status updates are allowed from MyTasks (user is assignee)
-      await taskService.updateStatus(updated.id, updated.status)
+      if (canEdit) {
+        await taskService.updateTask(updated.id, {
+          status: updated.status,
+          priority: updated.priority,
+        })
+      } else {
+        await taskService.updateStatus(updated.id, updated.status)
+      }
       setTasks(prev => prev.map(t => t.id === updated.id ? updated : t))
       setDetailTask(updated)
     } catch (err: any) {
-      // If it fails, revert
       console.error(err)
+    }
+  }
+
+  async function handleDeleteTask(taskId: number) {
+    try {
+      await taskService.deleteTask(taskId)
+      setTasks(prev => prev.filter(t => t.id !== taskId))
+      setDetailTask(null)
+    } catch (err: any) {
+      alert(err.response?.data?.message ?? 'Xóa task thất bại')
     }
   }
 
@@ -157,9 +200,19 @@ export default function MyTasks() {
         </div>
       </main>
 
-      {detailTask && (
-        <TaskDetailModal task={detailTask} canEdit={false} onClose={() => setDetailTask(null)} onUpdate={handleUpdate} />
-      )}
+      {detailTask && (() => {
+        const myRole = memberRoles[detailTask.projectId]
+        const canEdit = myRole === 'ADMIN' || myRole === 'MANAGER'
+        return (
+          <TaskDetailModal
+            task={detailTask}
+            canEdit={canEdit}
+            onClose={() => setDetailTask(null)}
+            onUpdate={handleUpdate}
+            onDelete={canEdit ? () => handleDeleteTask(detailTask.id) : undefined}
+          />
+        )
+      })()}
     </div>
   )
 }
