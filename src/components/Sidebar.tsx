@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, LayoutGrid, TrendingDown, CheckSquare, Users, FolderKanban, ChevronRight, LogOut } from 'lucide-react'
+import { LayoutDashboard, LayoutGrid, TrendingDown, CheckSquare, Users, FolderKanban, ChevronRight, LogOut, Timer } from 'lucide-react'
 import Avatar from './Avatar'
 import { useAuth } from '../context/AuthContext'
 import { useProject } from '../context/ProjectContext'
@@ -10,6 +10,7 @@ const navItems = [
   { path: '/dashboard', label: 'Dashboard',  icon: LayoutDashboard },
   { path: '/projects',  label: 'Dự án',      icon: FolderKanban },
   { path: '/board',     label: 'Board',       icon: LayoutGrid },
+  { path: '/sprints',   label: 'Sprints',     icon: Timer },
   { path: '/burndown',  label: 'Burndown',    icon: TrendingDown },
   { path: '/my-tasks',  label: 'My Tasks',    icon: CheckSquare },
   { path: '/members',   label: 'Members',     icon: Users },
