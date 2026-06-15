@@ -108,10 +108,13 @@ export default function Login() {
             {loading ? 'Đang đăng nhập...' : <><span>Đăng nhập</span><ArrowRight size={18} /></>}
           </button>
 
-          <p style={{ textAlign: 'center', fontSize: 13.5, color: '#8a8fa3', fontWeight: 500, marginTop: 22 }}>
-            Chưa có tài khoản?{' '}
-            <Link to="/register" style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>Đăng ký ngay</Link>
-          </p>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 22 }}>
+            <p style={{ fontSize: 13.5, color: '#8a8fa3', fontWeight: 500, margin: 0 }}>
+              Chưa có tài khoản?{' '}
+              <Link to="/register" style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>Đăng ký ngay</Link>
+            </p>
+            <Link to="/forgot-password" style={{ fontSize: 13.5, color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>Quên mật khẩu?</Link>
+          </div>
         </div>
       </div>
     </div>
