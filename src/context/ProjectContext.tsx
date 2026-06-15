@@ -3,6 +3,8 @@ import type { ProjectResponse } from '../services/projectService'
 
 export type { ProjectResponse }
 
+const STORAGE_KEY = 'taskflow_active_project'
+
 interface ProjectContextType {
   projects: ProjectResponse[]
   activeProject: ProjectResponse | null
@@ -12,9 +14,21 @@ interface ProjectContextType {
 
 const ProjectContext = createContext<ProjectContextType | null>(null)
 
+function loadSaved(): ProjectResponse | null {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY)
+    return raw ? (JSON.parse(raw) as ProjectResponse) : null
+  } catch { return null }
+}
+
 export function ProjectProvider({ children }: { children: ReactNode }) {
   const [projects, setProjects] = useState<ProjectResponse[]>([])
-  const [activeProject, setActiveProject] = useState<ProjectResponse | null>(null)
+  const [activeProject, setActiveProjectState] = useState<ProjectResponse | null>(loadSaved)
+
+  function setActiveProject(p: ProjectResponse) {
+    setActiveProjectState(p)
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(p))
+  }
 
   return (
     <ProjectContext.Provider value={{ projects, activeProject, setActiveProject, setProjects }}>

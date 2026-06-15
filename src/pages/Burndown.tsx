@@ -60,7 +60,7 @@ export default function Burndown() {
         plugins: { legend: { display: false }, tooltip: { backgroundColor: '#13152b', titleColor: '#aeb2c7', bodyColor: '#fff', cornerRadius: 10, padding: 12 } },
         scales: {
           x: { grid: { color: '#f0f1f5' }, ticks: { color: '#8a8fa3', font: { size: 12 } } },
-          y: { grid: { color: '#f0f1f5' }, ticks: { color: '#8a8fa3', font: { size: 12 } }, title: { display: true, text: mode === 'task' ? 'Số task' : 'Story Points', color: '#8a8fa3', font: { size: 12 } } },
+          y: { min: 0, grid: { color: '#f0f1f5' }, ticks: { color: '#8a8fa3', font: { size: 12 } }, title: { display: true, text: mode === 'task' ? 'Số task' : 'Story Points', color: '#8a8fa3', font: { size: 12 } } },
         },
       },
     })
