@@ -3,6 +3,8 @@ import { AuthProvider, useAuth } from './context/AuthContext'
 import { ProjectProvider } from './context/ProjectContext'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import ForgotPassword from './pages/ForgotPassword'
+import ResetPassword from './pages/ResetPassword'
 import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import Board from './pages/Board'
@@ -19,8 +21,10 @@ function PrivateRoute({ children }: { children: React.ReactNode }) {
 function AppRoutes() {
   return (
     <Routes>
-      <Route path="/login"     element={<Login />} />
-      <Route path="/register"  element={<Register />} />
+      <Route path="/login"           element={<Login />} />
+      <Route path="/register"        element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password"  element={<ResetPassword />} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/projects"  element={<PrivateRoute><Projects /></PrivateRoute>} />
       <Route path="/board"     element={<PrivateRoute><Board /></PrivateRoute>} />
