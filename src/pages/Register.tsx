@@ -1,8 +1,7 @@
 import { useState } from 'react'
-import { useNavigate, Link } from 'react-router-dom'
+import { Link } from 'react-router-dom'
 import { ArrowRight, Mail, Lock, User } from 'lucide-react'
 import { authService } from '../services/authService'
-import { useAuth } from '../context/AuthContext'
 
 export default function Register() {
   const [username, setUsername] = useState('')
@@ -10,19 +9,18 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const { login } = useAuth()
-  const navigate = useNavigate()
+  const [sent, setSent] = useState(false)
 
   async function handleRegister() {
     if (!username.trim() || !email.trim() || !password) {
       setError('Vui lòng điền đầy đủ thông tin'); return
     }
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) { setError('Email không hợp lệ'); return }
     if (password.length < 6) { setError('Mật khẩu tối thiểu 6 ký tự'); return }
     setLoading(true); setError('')
     try {
-      const res = await authService.register(username.trim(), email.trim(), password)
-      login(res.token, res.user)
-      navigate('/dashboard')
+      await authService.register(username.trim(), email.trim(), password)
+      setSent(true)
     } catch (err: any) {
       setError(err.response?.data?.message ?? 'Đăng ký thất bại, thử lại sau')
     } finally {
@@ -35,6 +33,22 @@ export default function Register() {
     { label: 'Email', icon: Mail, value: email, setter: setEmail, placeholder: 'you@example.com', type: 'email' },
     { label: 'Mật khẩu', icon: Lock, value: password, setter: setPassword, placeholder: '••••••••', type: 'password' },
   ] as const
+
+  if (sent) return (
+    <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f5f8', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>
+      <div style={{ background: '#fff', borderRadius: 20, padding: '40px', width: '100%', maxWidth: 420, boxShadow: '0 4px 24px rgba(20,23,40,.08)', textAlign: 'center' }}>
+        <div style={{ fontSize: 52, marginBottom: 16 }}>📧</div>
+        <h2 style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 800, color: '#13152b' }}>Kiểm tra email của bạn</h2>
+        <p style={{ margin: '0 0 24px', fontSize: 14, color: '#8a8fa3', lineHeight: 1.6 }}>
+          Chúng tôi đã gửi link xác nhận đến <strong style={{ color: '#13152b' }}>{email}</strong>.<br />
+          Nhấn vào link trong email để kích hoạt tài khoản.
+        </p>
+        <Link to="/login" style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none', fontSize: 14 }}>
+          Quay lại đăng nhập
+        </Link>
+      </div>
+    </div>
+  )
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f5f8', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>

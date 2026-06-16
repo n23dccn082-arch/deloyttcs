@@ -13,8 +13,12 @@ export interface AuthResponse {
 }
 
 export const authService = {
-  async register(username: string, email: string, password: string): Promise<AuthResponse> {
-    const { data } = await api.post<AuthResponse>('/auth/register', { username, email, password })
+  async register(username: string, email: string, password: string): Promise<void> {
+    await api.post('/auth/register', { username, email, password })
+  },
+
+  async verifyEmail(token: string): Promise<AuthResponse> {
+    const { data } = await api.get<AuthResponse>(`/auth/verify-email?token=${token}`)
     return data
   },
 
