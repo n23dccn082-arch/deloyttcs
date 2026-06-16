@@ -5,6 +5,7 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import ForgotPassword from './pages/ForgotPassword'
 import ResetPassword from './pages/ResetPassword'
+import VerifyEmail from './pages/VerifyEmail'
 import Dashboard from './pages/Dashboard'
 import Projects from './pages/Projects'
 import Board from './pages/Board'
@@ -25,6 +26,7 @@ function AppRoutes() {
       <Route path="/register"        element={<Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password"  element={<ResetPassword />} />
+      <Route path="/verify-email"    element={<VerifyEmail />} />
       <Route path="/dashboard" element={<PrivateRoute><Dashboard /></PrivateRoute>} />
       <Route path="/projects"  element={<PrivateRoute><Projects /></PrivateRoute>} />
       <Route path="/board"     element={<PrivateRoute><Board /></PrivateRoute>} />
