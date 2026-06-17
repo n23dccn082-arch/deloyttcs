@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Plus, Play, CheckCircle, X, Calendar, Edit2 } from 'lucide-react'
+import { Plus, Play, CheckCircle, X, Calendar, Edit2, Trash2 } from 'lucide-react'
 import Sidebar from '../components/Sidebar'
 import { useProject } from '../context/ProjectContext'
 import { useAuth } from '../context/AuthContext'
@@ -189,6 +189,15 @@ export default function Sprints() {
     } catch (err: any) { showToast(err.response?.data?.message ?? 'Kết thúc thất bại') }
   }
 
+  async function handleDelete(sprint: SprintResponse) {
+    if (!window.confirm(`Xóa sprint "${sprint.name}"?\nCác task trong sprint sẽ được chuyển về backlog. Hành động này không thể hoàn tác.`)) return
+    try {
+      await sprintService.deleteSprint(sprint.id)
+      setSprints(prev => prev.filter(s => s.id !== sprint.id))
+      showToast(`Đã xóa ${sprint.name}`)
+    } catch (err: any) { showToast(err.response?.data?.message ?? 'Xóa sprint thất bại') }
+  }
+
   async function handleCreate(name: string, goal: string, startDate: string, endDate: string) {
     if (!projectId) return
     try {
@@ -312,6 +321,12 @@ export default function Sprints() {
                         <button onClick={() => handleComplete(sprint.id)}
                           style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 9, background: '#e4ecfd', border: '1.5px solid #2563eb44', color: '#2563eb', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
                           <CheckCircle size={14} /> Kết thúc
+                        </button>
+                      )}
+                      {sprint.status === 'COMPLETED' && (
+                        <button onClick={() => handleDelete(sprint)}
+                          style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '9px 16px', borderRadius: 9, background: '#fde8e8', border: '1.5px solid #fecaca', color: '#dc2626', fontSize: 13, fontWeight: 700, cursor: 'pointer' }}>
+                          <Trash2 size={14} /> Xóa
                         </button>
                       )}
                     </div>

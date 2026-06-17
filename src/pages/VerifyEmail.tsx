@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useSearchParams, Link, useNavigate } from 'react-router-dom'
 import { authService } from '../services/authService'
 import { useAuth } from '../context/AuthContext'
@@ -9,10 +9,13 @@ export default function VerifyEmail() {
   const navigate = useNavigate()
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>('loading')
   const [errorMsg, setErrorMsg] = useState('')
+  const startedRef = useRef(false)
 
   useEffect(() => {
     const token = searchParams.get('token')
     if (!token) { setStatus('error'); setErrorMsg('Link không hợp lệ'); return }
+    if (startedRef.current) return
+    startedRef.current = true
 
     authService.verifyEmail(token)
       .then(res => {
@@ -21,10 +24,15 @@ export default function VerifyEmail() {
         setTimeout(() => navigate('/dashboard'), 2500)
       })
       .catch(err => {
+        const existingToken = localStorage.getItem('token')
+        if (existingToken) {
+          navigate('/dashboard', { replace: true })
+          return
+        }
         setStatus('error')
         setErrorMsg(err.response?.data?.message ?? 'Link xác nhận không hợp lệ hoặc đã hết hạn')
       })
-  }, [])
+  }, [login, navigate, searchParams])
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f4f5f8', fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif" }}>

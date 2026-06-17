@@ -66,4 +66,8 @@ export const sprintService = {
     const { data } = await api.put<SprintResponse>(`/sprints/${sprintId}`, payload)
     return data
   },
+
+  async deleteSprint(sprintId: number): Promise<void> {
+    await api.delete(`/sprints/${sprintId}`)
+  },
 }
