@@ -25,6 +25,8 @@ export interface BurndownPoint {
   date: string
   ideal: number
   actual: number | null
+  overdue: number
+  sprintEnd: boolean
 }
 
 export interface BurndownDataResponse {
@@ -32,6 +34,9 @@ export interface BurndownDataResponse {
   sprintName: string
   byTask: BurndownPoint[]
   byPoint: BurndownPoint[]
+  sprintGoalMissed: boolean
+  overdueTasksNow: number
+  overduePointsNow: number
 }
 
 export const sprintService = {

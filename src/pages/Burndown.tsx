@@ -52,12 +52,63 @@ export default function Burndown() {
         labels: data.map(d => d.date),
         datasets: [
           { label: 'Ideal', data: data.map(d => d.ideal), borderColor: '#2563eb', borderDash: [7, 6], borderWidth: 2, pointRadius: 0, tension: 0 },
-          { label: 'Thực tế', data: data.map(d => d.actual), borderColor: '#ef4444', borderWidth: 3, pointBackgroundColor: '#fff', pointBorderColor: '#ef4444', pointBorderWidth: 2, pointRadius: 4, tension: 0.25, fill: true, backgroundColor: 'rgba(239,68,68,.08)', spanGaps: false },
+          {
+            label: 'Thực tế',
+            data: data.map(d => d.actual),
+            borderColor: '#ef4444',
+            borderWidth: 3,
+            pointBackgroundColor: data.map(d => {
+              if (d.sprintEnd && d.actual != null && d.actual > 0) return '#f59e0b'
+              if (d.overdue > 0) return '#dc2626'
+              return '#fff'
+            }),
+            pointBorderColor: data.map(d => {
+              if (d.sprintEnd && d.actual != null && d.actual > 0) return '#f59e0b'
+              if (d.overdue > 0) return '#dc2626'
+              return '#ef4444'
+            }),
+            pointRadius: data.map(d => (d.sprintEnd ? 7 : 4)),
+            pointHoverRadius: data.map(d => (d.sprintEnd ? 9 : 6)),
+            tension: 0.25,
+            fill: true,
+            backgroundColor: 'rgba(239,68,68,.08)',
+            spanGaps: false,
+            segment: {
+              borderColor: ctx => {
+                const idx = ctx.p1DataIndex
+                const point = data[idx]
+                if (!point || point.actual == null) return '#ef4444'
+                if (point.overdue > 0) return '#dc2626'
+                return '#ef4444'
+              },
+            },
+          },
         ],
       },
       options: {
         responsive: true, maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { backgroundColor: '#13152b', titleColor: '#aeb2c7', bodyColor: '#fff', cornerRadius: 10, padding: 12 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: {
+            backgroundColor: '#13152b', titleColor: '#aeb2c7', bodyColor: '#fff', cornerRadius: 10, padding: 12,
+            callbacks: {
+              afterBody: items => {
+                const idx = items[0]?.dataIndex
+                if (idx == null) return []
+                const point = data[idx]
+                const lines: string[] = []
+                if (point.sprintEnd) lines.push('📍 Ngày kết thúc sprint')
+                if (point.overdue > 0) {
+                  lines.push(`⚠ Quá hạn: ${point.overdue} ${mode === 'task' ? 'task' : 'pts'}`)
+                }
+                if (point.sprintEnd && point.actual != null && point.actual > 0) {
+                  lines.push(`❗ Còn ${point.actual} ${mode === 'task' ? 'task' : 'pts'} chưa xong`)
+                }
+                return lines
+              },
+            },
+          },
+        },
         scales: {
           x: { grid: { color: '#f0f1f5' }, ticks: { color: '#8a8fa3', font: { size: 12 } } },
           y: { min: 0, grid: { color: '#f0f1f5' }, ticks: { color: '#8a8fa3', font: { size: 12 } }, title: { display: true, text: mode === 'task' ? 'Số task' : 'Story Points', color: '#8a8fa3', font: { size: 12 } } },
@@ -70,6 +121,7 @@ export default function Burndown() {
   const sprint = selectedSprint
   const total = sprint ? (mode === 'task' ? sprint.totalTasks : sprint.totalPoints) : 0
   const done  = sprint ? (mode === 'task' ? sprint.doneTasks  : sprint.donePoints)  : 0
+  const overdueNow = burndown ? (mode === 'task' ? burndown.overdueTasksNow : burndown.overduePointsNow) : 0
 
   if (!activeProject) return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#f4f5f8' }}>
@@ -142,6 +194,21 @@ export default function Burndown() {
             </div>
           ) : (
             <>
+              {(burndown.sprintGoalMissed || overdueNow > 0) && (
+                <div style={{ marginBottom: 18, display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {burndown.sprintGoalMissed && (
+                    <div style={{ padding: '14px 18px', borderRadius: 12, background: '#fff7ed', border: '1px solid #fed7aa', color: '#9a3412', fontSize: 13.5, fontWeight: 600 }}>
+                      ⚠ Sprint đã kết thúc nhưng vẫn còn công việc chưa hoàn thành — điểm cuối biểu đồ được đánh dấu màu cam.
+                    </div>
+                  )}
+                  {overdueNow > 0 && (
+                    <div style={{ padding: '14px 18px', borderRadius: 12, background: '#fef2f2', border: '1px solid #fecaca', color: '#991b1b', fontSize: 13.5, fontWeight: 600 }}>
+                      ⏰ Hiện có {overdueNow} {mode === 'task' ? 'task' : 'story points'} quá hạn — đoạn đường thực tế chuyển sang đỏ đậm.
+                    </div>
+                  )}
+                </div>
+              )}
+
               <section style={{ background: '#fff', border: '1px solid #edeef3', borderRadius: 18, padding: '24px 26px 20px', boxShadow: '0 1px 3px rgba(20,23,40,.04)', marginBottom: 22 }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 18, marginBottom: 18 }}>
                   <div>
@@ -162,6 +229,14 @@ export default function Burndown() {
                       <span style={{ width: 22, height: 3, background: '#ef4444', borderRadius: 3, display: 'inline-block' }} />
                       <span style={{ fontSize: 13, fontWeight: 700, color: '#5b5f78' }}>Thực tế</span>
                     </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 22, height: 3, background: '#dc2626', borderRadius: 3, display: 'inline-block' }} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#5b5f78' }}>Có task quá hạn</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#f59e0b', display: 'inline-block' }} />
+                      <span style={{ fontSize: 13, fontWeight: 700, color: '#5b5f78' }}>Hết sprint còn việc</span>
+                    </div>
                   </div>
                 </div>
                 <div style={{ height: 380, position: 'relative' }}>
@@ -169,12 +244,13 @@ export default function Burndown() {
                 </div>
               </section>
 
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 18 }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5,1fr)', gap: 18 }}>
                 {[
                   { label: 'Tổng', value: total, unit: mode === 'task' ? 'tasks' : 'pts', accent: '#2563eb', iconBg: '#e4ecfd', icon: '📋' },
                   { label: 'Hoàn thành', value: done, unit: mode === 'task' ? 'tasks' : 'pts', accent: '#16a34a', iconBg: '#e7f6ec', icon: '✅' },
                   { label: 'Còn lại', value: total - done, unit: mode === 'task' ? 'tasks' : 'pts', accent: '#ef4444', iconBg: '#fde8e8', icon: '⏳' },
-                  { label: 'Hoàn thành', value: total > 0 ? Math.round(done / total * 100) : 0, unit: '%', accent: '#d97706', iconBg: '#fdf0d9', icon: '📊' },
+                  { label: 'Quá hạn', value: overdueNow, unit: mode === 'task' ? 'tasks' : 'pts', accent: overdueNow > 0 ? '#dc2626' : '#8a8fa3', iconBg: overdueNow > 0 ? '#fef2f2' : '#f1f2f7', icon: '⏰' },
+                  { label: 'Tiến độ', value: total > 0 ? Math.round(done / total * 100) : 0, unit: '%', accent: '#d97706', iconBg: '#fdf0d9', icon: '📊' },
                 ].map(s => (
                   <div key={s.label + s.unit} style={{ background: '#fff', border: '1px solid #edeef3', borderRadius: 16, padding: '20px 22px', boxShadow: '0 1px 3px rgba(20,23,40,.04)', position: 'relative', overflow: 'hidden' }}>
                     <div style={{ position: 'absolute', left: 0, top: 0, bottom: 0, width: 4, background: s.accent }} />
